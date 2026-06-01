@@ -3,69 +3,65 @@
 namespace IndependentWork20
 {
     // =================================================================
-    // 1. ПАТЕРН STRATEGY (Стратегії обробки даних звіту)
+    // 1. ПАТЕРН STRATEGY (Стратегії накладання фільтрів на зображення)
     // =================================================================
 
-    // Інтерфейс стратегії
+    // Інтерфейс стратегії обробки зображення
     public interface IDataProcessorStrategy
     {
         void Process(string data);
     }
 
-    // Стратегія 1: Шифрування даних
-    public class EncryptDataStrategy : IDataProcessorStrategy
+    // Стратегія 1: Чорно-білий фільтр
+    public class GrayscaleFilterStrategy : IDataProcessorStrategy
     {
         public void Process(string data)
         {
-            // Імітація шифрування (простий реверс рядка для наочності)
-            char[] arr = data.ToCharArray();
-            Array.Reverse(arr);
-            string encrypted = new string(arr);
-            Console.WriteLine($"[STRATEGY] 🔐 Encrypting data... Result: '{encrypted}'");
+            Console.WriteLine($"[STRATEGY] 🔲 Applying GrayscaleFilter... Converting '{data}' pixels to shades of gray.");
         }
     }
 
-    // Стратегія 2: Стиснення даних
-    public class CompressDataStrategy : IDataProcessorStrategy
+    // Стратегія 2: Фільтр Сепія (ефект старовини)
+    public class SepiaFilterStrategy : IDataProcessorStrategy
     {
         public void Process(string data)
         {
-            Console.WriteLine($"[STRATEGY] 🗜️ Compressing data... Deflate ratio: 42%. Original size: {data.Length} chars.");
+            Console.WriteLine($"[STRATEGY] 🟫 Applying SepiaFilter... Adding warm brown tones to '{data}'.");
         }
     }
 
-    // Стратегія 3: Логування даних перед збереженням
-    public class LogDataStrategy : IDataProcessorStrategy
+    // Стратегія 3: Розмиття зображення
+    public class BlurFilterStrategy : IDataProcessorStrategy
     {
         public void Process(string data)
         {
-            Console.WriteLine($"[STRATEGY] 📝 Logging data context execution for: '{data}'");
+            Console.WriteLine($"[STRATEGY] 🌫️ Applying BlurFilter... Smoothing pixels for '{data}' using Gaussian blur matrix.");
         }
     }
 
-    // Контекст, який використовує стратегію (динамічна зміна поведінки в рантаймі)
-    public class DataContext
+    // Контекст обробки (в нашому випадку — графічний редактор / процесор зображень)
+    public class ImageDataContext
     {
         private IDataProcessorStrategy _strategy;
 
-        // Передача стратегії через конструктор
-        public DataContext(IDataProcessorStrategy strategy)
+        // Конструктор приймає початкову стратегію
+        public ImageDataContext(IDataProcessorStrategy strategy)
         {
             _strategy = strategy;
         }
 
-        // Зміна стратегії "на льоту"
+        // Зміна фільтра в рантаймі
         public void SetStrategy(IDataProcessorStrategy strategy)
         {
             _strategy = strategy;
         }
 
-        // Виконання алгоритму стратегії
+        // Запуск обробки поточним фільтром
         public void ExecuteProcessing(string data)
         {
             if (_strategy == null)
             {
-                Console.WriteLine("[ERROR] Strategy is not set!");
+                Console.WriteLine("[ERROR] Filter strategy is not set!");
                 return;
             }
             _strategy.Process(data);
@@ -73,105 +69,95 @@ namespace IndependentWork20
     }
 
     // =================================================================
-    // 2. ПАТЕРН OBSERVER (Сповіщення через події C#)
+    // 2. ПАТЕРН OBSERVER (Сповіщення про готовність зображення)
     // =================================================================
 
-    // Суб'єкт (Subject / Publisher), який генерує події
+    // Суб'єкт (Publisher), який сповіщає, що зображення оброблено
     public class DataPublisher
     {
-        // Подія на основі вбудованого делегату Action<string>
+        // Подія, на яку підписуватимуться спостерігачі
         public event Action<string> DataProcessed;
 
-        // Метод для виклику події та сповіщення підписників
+        // Метод публікації події
         public void PublishDataProcessed(string data)
         {
-            Console.WriteLine($"[PUBLISHER] 📢 State changed! Notifying observers about processed data: '{data}'");
+            Console.WriteLine($"[PUBLISHER] 📢 Image processing finished! Notifying UI and storage handlers for: '{data}'");
             
-            // Викликаємо подію, якщо є хоча б один підписник (?.Invoke)
+            // Виклик події для всіх підписників
             DataProcessed?.Invoke(data);
         }
     }
 
-    // Спостерігач 1: Консольний логер
-    public class ConsoleLoggerObserver
+    // Спостерігач 1: Імітація відображення на екрані (UI)
+    public class ConsoleOutputObserver
     {
         public void OnDataProcessed(string data)
         {
-            Console.WriteLine($"   [OBSERVER] 💻 ConsoleLogger: Received update. Internal log saved for '{data}'.");
+            Console.WriteLine($"   [OBSERVER] 💻 ConsoleOutput: Refreshing screen matrix. Rendering updated image '{data}' on display.");
         }
     }
 
-    // Спостерігач 2: Зберігач у файл
-    public class FileSaverObserver
+    // Спостерігач 2: Зберігач обробленого зображення на диск
+    public class ImageSaverObserver
     {
         public void OnDataProcessed(string data)
         {
-            Console.WriteLine($"   [OBSERVER] 💾 FileSaver: Simulated append to 'audit_trail.txt' with payload '{data}'.");
-        }
-    }
-
-    // Спостерігач 3: Відправник аналітики
-    public class AnalyticsSenderObserver
-    {
-        public void OnDataProcessed(string data)
-        {
-            Console.WriteLine($"   [OBSERVER] 📊 AnalyticsSender: Metric sent to cloud server. String payload length = {data.Length}.");
+            Console.WriteLine($"   [OBSERVER] 💾 ImageSaver: Writing metadata. Image '{data}' successfully written to /outputs/ folder.");
         }
     }
 
     // =================================================================
-    // 3. МЕТОД MAIN (Клієнтський код)
+    // 3. МЕТОД MAIN (Тестування варіанту)
     // =================================================================
     class Program
     {
         static void Main(string[] args)
         {
             Console.OutputEncoding = System.Text.Encoding.UTF8;
-            Console.WriteLine("=== Студент: Крупка Іван | Самостійна робота №20 ===");
-            Console.WriteLine("Демонстрація патернів Strategy + Observer (Events)\n");
+            Console.WriteLine("=== Студент: Крупка Іван | Варіант: Обробка зображень ===");
+            Console.WriteLine("Демонстрація патернів Strategy + Observer\n");
 
-            // --- Крок 1: Ініціалізація Контексту та Видавця ---
-            var context = new DataContext(new LogDataStrategy()); // Початкова стратегія - логування
+            // Назва файлу зображення, що імітує вхідні дані
+            string imageName = "photo_2026.png";
+
+            // 1. Створюємо контекст (початковий фільтр — Grayscale) та видавця подій
+            var imageContext = new ImageDataContext(new GrayscaleFilterStrategy());
             var publisher = new DataPublisher();
 
-            // --- Крок 2: Створення та підписка спостерігачів (Observer) ---
-            var consoleObs = new ConsoleLoggerObserver();
-            var fileObs = new FileSaverObserver();
-            var analyticsObs = new AnalyticsSenderObserver();
+            // 2. Створюємо спостерігачів згідно з вашим варіантом
+            var consoleUI = new ConsoleOutputObserver();
+            var imageSaver = new ImageSaverObserver();
 
-            // Підписуємо методи спостерігачів на подію через оператор +=
-            publisher.DataProcessed += consoleObs.OnDataProcessed;
-            publisher.DataProcessed += fileObs.OnDataProcessed;
-            publisher.DataProcessed += analyticsObs.OnDataProcessed;
+            // 3. Підписуємо спостерігачів на подію закінчення обробки
+            publisher.DataProcessed += consoleUI.OnDataProcessed;
+            publisher.DataProcessed += imageSaver.OnDataProcessed;
 
-            string payload = "Report_No20_Data";
-
-            // --- Крок 3: Робота зі Стратегією 1 (Логування) ---
-            Console.WriteLine("--- Етап 1: Використання LogDataStrategy ---");
-            context.ExecuteProcessing(payload);
-            publisher.PublishDataProcessed(payload);
+            // --- ТЕСТ 1: Ефект Чорно-білого фото ---
+            Console.WriteLine("--- Етап 1: Застосування GrayscaleFilter ---");
+            imageContext.ExecuteProcessing(imageName);
+            publisher.PublishDataProcessed(imageName);
             Console.WriteLine();
 
-            // --- Крок 4: Зміна стратегії в рантаймі на Стиснення ---
-            Console.WriteLine("--- Етап 2: Динамічна зміна на CompressDataStrategy ---");
-            context.SetStrategy(new CompressDataStrategy());
-            context.ExecuteProcessing(payload);
-            publisher.PublishDataProcessed(payload);
+            // --- ТЕСТ 2: Динамічна зміна фільтра на Сепію ---
+            Console.WriteLine("--- Етап 2: Зміна фільтра на SepiaFilter ---");
+            imageContext.SetStrategy(new SepiaFilterStrategy());
+            imageContext.ExecuteProcessing(imageName);
+            publisher.PublishDataProcessed(imageName);
             Console.WriteLine();
 
-            // --- Крок 5: Зміна стратегії на Шифрування + Демонстрація відписки ---
-            Console.WriteLine("--- Етап 3: Динамічна зміна на EncryptDataStrategy & Відписка файлового менеджера ---");
-            context.SetStrategy(new EncryptDataStrategy());
-            context.ExecuteProcessing(payload);
+            // --- ТЕСТ 3: Динамічна зміна на Розмиття + Демонстрація гнучкості спостерігачів ---
+            Console.WriteLine("--- Етап 3: Зміна фільтра на BlurFilter & Відписка збереження на диск ---");
+            imageContext.SetStrategy(new BlurFilterStrategy());
+            imageContext.ExecuteProcessing(imageName);
 
-            // Показуємо гнучкість Observer: відписуємо FileSaverObserver
-            publisher.DataProcessed -= fileObs.OnDataProcessed;
-            
-            // Публікуємо знову — FileSaver вже не отримає сповіщення
-            publisher.PublishDataProcessed(payload);
+            // Наприклад, користувач просто дивиться прев'ю, автоматично зберігати на диск не потрібно
+            publisher.DataProcessed -= imageSaver.OnDataProcessed;
+
+            // Сповіщаємо знову — тепер відпрацює лише вивід на екран
+            publisher.PublishDataProcessed(imageName);
             Console.WriteLine();
 
-            Console.WriteLine("Роботу завершено успішно.");
+            Console.WriteLine("Програму успішно виконано.");
             Console.ReadKey();
         }
     }
